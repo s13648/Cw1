@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -19,7 +20,10 @@ namespace Cw1
             var content = await response.Content.ReadAsByteArrayAsync();
             var data = Encoding.UTF8.GetString(content);
             var extractEmails = ExtractEmails(data);
-
+            foreach (var extractEmail in extractEmails)
+            {
+                Console.WriteLine(extractEmail);
+            }
         }
 
         private static IEnumerable<string> ExtractEmails(string data)
