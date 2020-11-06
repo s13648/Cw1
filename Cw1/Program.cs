@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -9,24 +8,55 @@ using System.Threading.Tasks;
 
 namespace Cw1
 {
-    static class Program
+    internal static class Program
     {
         private const string EmailPattern = @"\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*";
 
-        static async Task Main(string[] args)
+        private static async Task Main(string[] args)
         {
-            var httpClient = new HttpClient();
-            var response = await httpClient.GetAsync(args[0]);
-            var content = await response.Content.ReadAsByteArrayAsync();
-            var data = Encoding.UTF8.GetString(content);
-            var extractEmails = ExtractEmails(data);
-            foreach (var extractEmail in extractEmails)
+            if (args == null)
+                throw new ArgumentNullException(nameof(args));
+
+            var isUri = Uri.IsWellFormedUriString(args[0], UriKind.RelativeOrAbsolute);
+            if (!isUri)
+                throw new ArgumentException("url");
+
+            try
+            {
+                var extractEmails = await GetEmails(args[0]);
+                ShoEmails(extractEmails);
+            }
+            catch 
+            {
+                Console.WriteLine("Błąd wczasie pobierania strony");
+            }
+        }
+
+        private static void ShoEmails(IList<string> extractEmails)
+        {
+            if (extractEmails == null || extractEmails.Count == 0)
+            {
+                Console.WriteLine("Nie znaleziono adresów email");
+                return;
+            }
+
+            foreach (var extractEmail in extractEmails.Distinct())
             {
                 Console.WriteLine(extractEmail);
             }
         }
 
-        private static IEnumerable<string> ExtractEmails(string data)
+        private static async Task<IList<string>> GetEmails(string url)
+        {
+            using var httpClient = new HttpClient();
+            var response = await httpClient.GetAsync(url);
+            var content = await response.Content.ReadAsByteArrayAsync();
+            var data = Encoding.UTF8.GetString(content);
+            var extractEmails = ExtractEmails(data);
+            return extractEmails;
+        }
+
+        private static IList<string> ExtractEmails(string data)
         {
             var emailRegex = new Regex(EmailPattern, RegexOptions.IgnoreCase);
 
